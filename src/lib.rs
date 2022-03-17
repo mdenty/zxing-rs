@@ -157,6 +157,18 @@ extern "C" {
         margin: c_int,
         ecc_level: c_int,
     ) -> c_int;
+    
+    fn zxing_write_qrcode_binary(
+        data: *const u8,
+        length: c_int,
+        buffer: *mut *mut u8,
+        format: c_int,
+        width: c_int,
+        height: c_int,
+        margin: c_int,
+        ecc_level: c_int,
+    ) -> c_int;
+    
     fn zxing_write_release_buffer(buffer: *mut u8) -> c_int;
 }
 
@@ -212,6 +224,35 @@ pub fn write_qrcode(
         let mut buffer: *mut u8 = mem::uninitialized();
         let buffer_size = zxing_write_qrcode(
             CString::new(text).unwrap().as_ptr(),
+            &mut buffer,
+            format.into(),
+            width as c_int,
+            height as c_int,
+            mergin as c_int,
+            ecc_level as c_int,
+        );
+        println!("{}", buffer_size);
+        buffer_vector.resize(buffer_size as usize, 0);
+        buffer.copy_to(buffer_vector.as_mut_ptr(), buffer_size as usize);
+    }
+
+    return Ok(buffer_vector);
+}
+
+pub fn write_qrcode_binary(
+    data: &[u8],
+    format: Format,
+    width: u64,
+    height: u64,
+    mergin: u64,
+    ecc_level: u64,
+) -> Result<Vec<u8>, EncodeError> {
+    let mut buffer_vector = Vec::new();
+    unsafe {
+        let mut buffer: *mut u8 = mem::uninitialized();
+        let buffer_size = zxing_write_qrcode_binary(
+            data.as_ptr(),
+            i32::try_from(data.len()).ok().unwrap(),
             &mut buffer,
             format.into(),
             width as c_int,
