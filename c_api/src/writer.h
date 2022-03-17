@@ -10,6 +10,8 @@
 extern "C" {
     int zxing_write_qrcode(const char *text, uint8_t **buffer, int format, int width, int height, int margin,
                            int ecc_level);
+    int zxing_write_qrcode_binary(const uint8_t* data, int length, uint8_t** buffer, int format,
+                                  int width, int height, int margin, int ecc_level);
     int zxing_write_release_buffer(uint8_t* buffer);
 };
 #endif //ZXING_RS_WRITER_H
