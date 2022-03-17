@@ -27,6 +27,7 @@ tempdir = "0.3"
 image = "0.23"
 num = "0.2"
 bitflags = "1.0"
+encoding = "0.2"
 
 [features]
 parallel = ["cc/parallel"]

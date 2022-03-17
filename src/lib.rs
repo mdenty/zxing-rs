@@ -6,6 +6,9 @@ use std::mem;
 use std::os::raw::c_int;
 use std::slice::from_raw_parts;
 use std::str::from_utf8;
+use std::convert::TryFrom;
+use encoding::{Encoding, EncoderTrap};
+use encoding::all::ISO_8859_1;
 
 #[macro_use]
 extern crate bitflags;
@@ -115,6 +118,13 @@ pub struct DecodedQrCode {
     pub corners: [(i32, i32); 4],
 }
 
+pub struct DecodedQrCodeBinary {
+    raw_result: *mut ZxingResult,
+    pub data: Vec<u8>,
+    pub format: Format,
+    pub corners: [(i32, i32); 4],
+}
+
 impl Drop for DecodedQrCode {
     fn drop(&mut self) {
         unsafe {
@@ -146,6 +156,7 @@ extern "C" {
         index_g: c_int,
         index_b: c_int,
     ) -> c_int;
+
     fn release_result(result: *mut ZxingResult);
 
     fn zxing_write_qrcode(
@@ -210,6 +221,30 @@ pub fn read_qrcode(image: DynamicImage) -> Result<DecodedQrCode, DecodeError> {
         })
     }
 }
+
+pub fn read_qrcode_binary(image: DynamicImage) -> Result<DecodedQrCodeBinary, DecodeError> {
+    let decode_result = read_qrcode(image);
+    match decode_result {
+        Ok(decoded) => {
+            let iso8859_1_res = ISO_8859_1.encode(&decoded.text, EncoderTrap::Strict);
+            match iso8859_1_res {
+                Ok(data) => 
+                    return Ok(DecodedQrCodeBinary {
+                        raw_result: decoded.raw_result,
+                        data: data,
+                        format: decoded.format,
+                        corners: decoded.corners,
+                    }),
+                Err(e) =>
+                    return Err(DecodeError::FormatError),
+            }
+        },
+        Err(e) =>
+            return Err(e),
+    }
+}
+
+
 
 pub fn write_qrcode(
     text: &str,
