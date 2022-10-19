@@ -1,15 +1,15 @@
+use encoding::all::ISO_8859_1;
+use encoding::{EncoderTrap, Encoding};
 use image::DynamicImage;
 use image::GenericImageView;
 use num::FromPrimitive;
+use std::convert::TryFrom;
 use std::ffi::CString;
+use std::fmt::{Display, Formatter};
 use std::mem;
 use std::os::raw::c_int;
 use std::slice::from_raw_parts;
 use std::str::from_utf8;
-use std::convert::TryFrom;
-use std::fmt::{Display, Formatter};
-use encoding::{Encoding, EncoderTrap};
-use encoding::all::ISO_8859_1;
 
 #[macro_use]
 extern crate bitflags;
@@ -95,6 +95,12 @@ pub enum DecodeError {
     ChecksumError,
 }
 
+impl Display for DecodeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 impl FromPrimitive for DecodeError {
     fn from_i64(n: i64) -> Option<Self> {
         if n < 0 {
@@ -175,7 +181,7 @@ extern "C" {
         margin: c_int,
         ecc_level: c_int,
     ) -> c_int;
-    
+
     fn zxing_write_qrcode_binary(
         data: *const u8,
         length: c_int,
@@ -186,7 +192,7 @@ extern "C" {
         margin: c_int,
         ecc_level: c_int,
     ) -> c_int;
-    
+
     fn zxing_write_release_buffer(buffer: *mut u8) -> c_int;
 }
 
@@ -235,23 +241,20 @@ pub fn read_qrcode_binary(image: DynamicImage) -> Result<DecodedQrCodeBinary, De
         Ok(decoded) => {
             let iso8859_1_res = ISO_8859_1.encode(&decoded.text, EncoderTrap::Strict);
             match iso8859_1_res {
-                Ok(data) => 
+                Ok(data) => {
                     return Ok(DecodedQrCodeBinary {
                         raw_result: decoded.raw_result,
                         data: data,
                         format: decoded.format,
                         corners: decoded.corners,
-                    }),
-                Err(e) =>
-                    return Err(DecodeError::FormatError),
+                    })
+                }
+                Err(e) => return Err(DecodeError::FormatError),
             }
-        },
-        Err(e) =>
-            return Err(e),
+        }
+        Err(e) => return Err(e),
     }
 }
-
-
 
 pub fn write_qrcode(
     text: &str,
