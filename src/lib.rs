@@ -7,6 +7,7 @@ use std::os::raw::c_int;
 use std::slice::from_raw_parts;
 use std::str::from_utf8;
 use std::convert::TryFrom;
+use std::fmt::{Display, Formatter};
 use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_1;
 
@@ -78,6 +79,12 @@ impl Into<c_int> for Format {
 impl From<c_int> for Format {
     fn from(value: c_int) -> Format {
         Format::from_bits_truncate(value as u32)
+    }
+}
+
+impl Display for Format {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
